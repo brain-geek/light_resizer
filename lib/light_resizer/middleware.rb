@@ -9,30 +9,23 @@ module LightResizer
     def initialize(app, root, folder = 'public')
       @app           = app
       @image_loader  = LightResizer::ImageLoader.new File.join(root, folder)
-      @path          = LightResizer::Middleware::Path.new
       @resizer       = LightResizer::Middleware::Resizer.new
     end
 
     def call(env)
-      @path.request_path = env['PATH_INFO']
-      if @path.image_path? and resize_request?
-      	resize
-      	Rack::File.new(@image_loader.resized.root_dir).call(env) #todo check
+      @path          = LightResizer::Middleware::Path.new(env['PATH_INFO'])
+      
+      if @path.image_path? and @path.original_image_exists?
+      	resize_and_serve_file
       else
       	@app.call(env)
       end
 
     end
 
-    def resize_request?
-        @image_loader.original_image_path = @path.image_path
-        @image_loader.resize_prefix = @path.prefix
-        @image_loader.original_image_exist?
-    end
-
     private
 
-    def resize
+    def resize_and_serve_file
       @resizer.resize(
         @path.dimensions,
         @image_loader.original_path,
@@ -41,6 +34,8 @@ module LightResizer
         @path.image_extension,
         @path.convert_path?
       ) unless @image_loader.resized_image_exist?
+
+      Rack::File.new(@image_loader.resized.root_dir).call(env) #todo check
     end
 
   end

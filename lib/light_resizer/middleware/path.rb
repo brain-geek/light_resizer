@@ -5,18 +5,16 @@ module LightResizer
 
       PREFIX_REGEXP = /^[0-9]+x[0-9]+(_crop|_convert)*_/
 
-      attr_reader :request_path
-
-      def request_path=(path)
+      def initialize(path)
         @request_path = path
-        @segments = nil
       end
+
+      attr_reader :request_path
 
       # {Bool} returns true if request path begins with 'image'
       def image_path?
         request_dir.end_with?('light_resize')
       end
-
 
       # {Bool} returns true if image should be croped on resize
       def crop_path?
@@ -38,7 +36,6 @@ module LightResizer
         File.extname(request_path)
       end
 
-
       # {String} returns prefix of resized image name
       # 200x200_crop_image.png => 200x200_crop
       def prefix
@@ -47,6 +44,14 @@ module LightResizer
 
       def dimensions
         prefix.split('_').first
+      end
+
+      def original_image_path
+        Dir[image_path + '.*'].first
+      end
+
+      def original_image_exists?
+        !!original_image_path
       end
 
       private
